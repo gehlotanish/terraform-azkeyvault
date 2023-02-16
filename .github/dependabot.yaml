@@ -6,3 +6,4 @@ updates:
     schedule:
       interval: "daily"
       time: "23:16"
+      timezone: "Asia/Calcutta"
