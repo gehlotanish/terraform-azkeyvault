@@ -1,9 +1,7 @@
 version: 2
 updates:
-  # Maintain dependencies for GitHub Action
   - package-ecosystem: "terraform"
     directory: "/"
     schedule:
       interval: "daily"
-      time: "23:05"
-      timezone: "Asia/Kolkata"
+
