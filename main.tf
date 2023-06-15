@@ -31,6 +31,17 @@ resource "azurerm_key_vault" "example" {
       "recover"
     ]
   }
+  dynamic "network_acls" {
+    for_each = var.network_acls == null ? [] : [var.network_acls]
+    iterator = acl
+
+    content {
+      bypass                     = acl.value.bypass
+      default_action             = acl.value.default_action
+      ip_rules                   = acl.value.ip_rules
+      virtual_network_subnet_ids = acl.value.virtual_network_subnet_ids
+    }
+  }
 }
 
 resource "azurerm_log_analytics_workspace" "example" {
