@@ -21,22 +21,30 @@ variable "environment" {
 variable "sku_name" {
   type        = string
   description = "KeyVault SKU Name. Possible values are standard and premium"
+  default     = "standard"
 }
 
 variable "purge_protection" {
-  type        = string
+  type        = bool
   description = "Defaults to false, Once Purge Protection has been Enabled it's not possible to Disable it"
   default     = "false"
 }
 
 variable "log_analytics_name" {
   type        = string
-  description = "Azure Existing log analytics name"
+  description = "Azure log analytics name"
 }
 
-variable "kv_diagnostic_name" {
-  type        = string
-  description = "Key Vault log diagnostic name"
+variable "soft_delete_retention_days" {
+  type        = number
+  description = "The number of days that items should be retained for once soft-deleted. This value can be between `7` and `90`"
+  default     = "7"
+}
+
+variable "public_network_access_enabled" {
+  type        = bool
+  description = "Whether public network access is allowed for this Key Vault. Defaults to true"
+  default     = true
 }
 
 variable "network_acls" {
@@ -50,4 +58,15 @@ variable "network_acls" {
   default = {}
 }
 
+variable "keyvault_extra_tags" {
+  type        = map(string)
+  default     = {}
+  description = "List of KV extra tags"
+}
+
+variable "diag_enabled" {
+  type        = bool
+  description = "Enable diagnostic service"
+  default = false
+}
 

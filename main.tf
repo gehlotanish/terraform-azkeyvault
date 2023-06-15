@@ -1,4 +1,4 @@
-provider azurerm {
+provider "azurerm" {
   features {}
 }
 
@@ -7,13 +7,15 @@ provider azurerm {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "example" {
-  name                       = var.keyvault_name
-  location                   = var.location
-  resource_group_name        = var.azurerm_resource_group_name
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = var.purge_protection
+  name                          = var.keyvault_name
+  location                      = var.location
+  resource_group_name           = var.azurerm_resource_group_name
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  sku_name                      = var.sku_name
+  soft_delete_retention_days    = var.soft_delete_retention_days
+  purge_protection_enabled      = var.purge_protection
+  public_network_access_enabled = var.public_network_access_enabled
+
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
@@ -42,9 +44,12 @@ resource "azurerm_key_vault" "example" {
       virtual_network_subnet_ids = acl.value.virtual_network_subnet_ids
     }
   }
+  tags = merge(local.default_tags, var.keyvault_extra_tags)
 }
 
 resource "azurerm_log_analytics_workspace" "example" {
+  count = var.diag_enabled ? 1 : 0
+
   name                = var.log_analytics_name
   location            = var.location
   resource_group_name = var.azurerm_resource_group_name
@@ -53,24 +58,40 @@ resource "azurerm_log_analytics_workspace" "example" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "example" {
-  name                       = var.kv_diagnostic_name
+  count = var.diag_enabled ? 1 : 0
+
+  name                       = "${var.keyvault_name}-diag"
   target_resource_id         = azurerm_key_vault.example.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.example[count.index].id
 
-  log {
-    category = "AuditEvent"
-    enabled  = true
+  dynamic "metric" {
 
-    retention_policy {
-      enabled = false
+    iterator = entry
+    for_each = data.azurerm_monitor_diagnostic_categories.keyvault_diagsettings[count.index].metrics
+
+    content {
+      category = entry.value
+      enabled  = true
+
+      retention_policy {
+        enabled = true
+        days    = var.app_workspace_retention
+      }
     }
   }
 
-  metric {
-    category = "AllMetrics"
+  dynamic "enabled_log" {
 
-    retention_policy {
-      enabled = false
+    iterator = entry
+    for_each = data.azurerm_monitor_diagnostic_categories.keyvault_diagsettings[count.index].logs
+
+    content {
+      category = entry.value
+
+      retention_policy {
+        enabled = true
+        days    = var.app_workspace_retention
+      }
     }
   }
 }
